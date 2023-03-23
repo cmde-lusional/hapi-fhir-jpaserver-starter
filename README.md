@@ -1,3 +1,70 @@
+# MRR HELP
+
+Make sure jdk17 is installed
+
+```
+apt install openjdk-17-jdk openjdk-17-jre
+```
+
+Make sure that maven 3.9.1 is installed:
+
+```
+wget https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.zip
+cd apache-maven-3.9.1/
+mv ../apache-maven-3.9.1/ /opt/maven/
+```
+
+Add maven to PATH
+
+```
+vim .bashrc
+export PATH=/opt/maven/apache-maven-3.9.1/bin:$PATH
+source .bashrc
+```
+
+Make sure postgres is correctly installed 
+
+```
+psql --version
+```
+
+In this repo I changed the application yaml under src/main/resources so that I can use postgresql:
+
+```
+spring:
+  main:
+    allow-circular-references: true
+    #allow-bean-definition-overriding: true
+  flyway:
+    enabled: false
+    check-location: false
+    baselineOnMigrate: true
+  datasource:
+    url: 'jdbc:postgresql://localhost:5432/hapi'
+    username: postgres
+    password: postgres
+    driverClassName: org.postgresql.Driver
+```
+
+
+Run the maven project skipping the tests (test are made for using hibernate)
+```
+mvn jetty:run -Dmaven.test.skip
+```
+----> You need to make sure that inside postgresql the user/ password and db exits.
+
+```
+su postgres
+\password postgres
+CREATE DATABASE hapi;
+```
+
+You can test the connection as follows:
+
+```
+psql postgresql://postgres:postgres@localhost:5432/hapi
+```
+
 # HAPI-FHIR Starter Project
 
 This project is a complete starter project you can use to deploy a FHIR server using HAPI FHIR JPA.
