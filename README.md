@@ -1,5 +1,7 @@
 # MRR HELP
 
+## Install maven project for hapi server
+
 Make sure jdk17 is installed
 
 ```
@@ -50,6 +52,8 @@ spring:
 Run the maven project skipping the tests (test are made for using hibernate)
 ```
 mvn jetty:run -Dmaven.test.skip
+# start in background
+mvn -e -X jetty:run -Dmaven.test.skip > /dev/null 2>&1 &
 ```
 ----> You need to make sure that inside postgresql the user/ password and db exits.
 
@@ -64,6 +68,69 @@ You can test the connection as follows:
 ```
 psql postgresql://postgres:postgres@localhost:5432/hapi
 ```
+
+## Import test data
+
+Importing the test data was pain in the ass
+
+I first tried to use the cli tool “hapi-fhir-cli” (can be downloaded from fhir website)
+
+```
+brew install hapi-fhir-cli
+hapi-fhir-cli upload-examples -v r4 -t http://localhost:8080/fhir -d examples
+```
+
+It turns out the the example json files from this uploader are broken. Some issues on the github website of hapi are showing the same error message. (more information here: [https://github.com/hapifhir/hapi-fhir/issues/719](https://github.com/hapifhir/hapi-fhir/issues/719))
+
+[https://hapifhir.io/hapi-fhir/docs/tools/hapi_fhir_cli.html](https://hapifhir.io/hapi-fhir/docs/tools/hapi_fhir_cli.html)
+
+So I used synthea ([https://github.com/synthetichealth/synthea](https://github.com/synthetichealth/synthea)) again for creating my own test data.
+
+```
+./run_synthea -p 50 --exporter.fhir.export=true
+```
+
+Synthea builds tend to fail to, I guess sometimes is wrong with the characters that are used inside the program code. 
+
+I could fix one common error to make the program run “sometimes”. The error is listed here and called “`Malformed input or input contains unmappable characters`":
+
+[https://github.com/synthetichealth/synthea/issues/569](https://github.com/synthetichealth/synthea/issues/569)
+
+Solution: Change the following line inside synthea.properties:
+
+```
+exporter.use_uuid_filenames = true
+```
+
+After you create the data you can go to the hapi server inside your browser:
+
+http://10.8.2.199:8080/fhir/
+
+System-Level-Operations
+
+Post: Server-Transaction
+
+First you need to upload the dependency resources for practitioner and hospitals:
+
+hospitalInformation<nr>.json
+
+practitionerInformation<nr>.json
+
+If you don’t post them first the import of the user will fail.
+
+Afterwards the <user>.json (used by id) can be posted.
+
+you can check the postgres db afterwards:
+
+```
+# select hash_sha256, fhir_id from hfj_resource where res_type = 'Patient';
+                           hash_sha256                            | fhir_id
+------------------------------------------------------------------+---------
+ dc8204fd0445ac00a517dc717315e1ecad5c561e62b32f88941df435ec554ce0 | 555
+```
+
+I will add the files to this repo under /examples
+
 
 # HAPI-FHIR Starter Project
 
